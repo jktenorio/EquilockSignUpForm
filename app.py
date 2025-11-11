@@ -32,17 +32,22 @@ def init_db():
         ''')
         conn.commit()
 
-# ⚡ Initialize database immediately when app starts
 init_db()
 
 # ---------- CSV BACKUP ----------
 CSV_PATH = os.path.join(os.path.dirname(__file__), 'users_backup.csv')
 
+# Initialize CSV with header if it doesn't exist
+def init_csv():
+    if not os.path.exists(CSV_PATH):
+        with open(CSV_PATH, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(["fullname", "email", "idnumber", "role"])
+
+init_csv()
+
 def append_to_csv(fullname, email, idnumber, role):
-    """Append new user to CSV, create file with header if it doesn't exist"""
-    # Ensure folder exists
-    os.makedirs(os.path.dirname(CSV_PATH), exist_ok=True)
-    
+    """Append new user to CSV"""
     file_exists = os.path.exists(CSV_PATH)
     with open(CSV_PATH, 'a', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
@@ -63,19 +68,15 @@ def submit():
     role = request.form.get('role', '').strip()
     agree = request.form.get('agree')
 
-    # Validate required fields
     if not all([fullname, email, idnumber, role, agree]):
         return "<h2>⚠️ Please fill out all fields and agree to the terms.</h2>"
 
-    # Basic email format validation
     if not re.match(r'^[^@]+@[^@]+\.[^@]+$', email):
         return "<h2>⚠️ Invalid email format. Please enter a valid email.</h2>"
 
-    # Validate ID number format ####-####
     if not re.match(r'^\d{4}-\d{4}$', idnumber):
         return "<h2>⚠️ Invalid ID number format. Use ####-#### (e.g., 0222-0282).</h2>"
 
-    # Validate role
     if role not in ["Student", "Faculty"]:
         return "<h2>⚠️ Invalid role. Please select Student or Faculty.</h2>"
 
@@ -88,9 +89,7 @@ def submit():
             )
             conn.commit()
 
-        # Append new user to CSV permanently
         append_to_csv(fullname, email, idnumber, role)
-
         return redirect(url_for('thank_you'))
 
     except sqlite3.IntegrityError:
@@ -99,16 +98,16 @@ def submit():
     except sqlite3.OperationalError as e:
         return f"<h2>⚠️ Database error: {e}</h2>"
 
-# Thank you page
 @app.route('/thankyou')
 def thank_you():
     return render_template('thankyou.html')
 
-# Secure CSV download
 @app.route('/download_csv')
 def download_csv():
     token = request.args.get("token")
-    if token != os.environ.get("ADMIN_TOKEN"):  # Set in environment variables
+    
+    # For testing, allow token "equilocksdk"
+    if token != "equilocksdk":
         abort(403)
 
     if not os.path.exists(CSV_PATH):
