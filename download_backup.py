@@ -6,7 +6,7 @@ import os
 RENDER_URL = "http://127.0.0.1:5000/download_csv"  # or your deployed URL
 
 # Admin token used in your environment
-TOKEN = "equishanedavekevin"  # Replace with your actual token
+TOKEN = "equilocksdk"  # Replace with your actual token
 
 # Save CSV in the same folder as this script
 LOCAL_CSV = os.path.join(os.path.dirname(__file__), "users_backup.csv")
